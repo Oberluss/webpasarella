@@ -1,0 +1,755 @@
+<?php
+session_start();
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pedidos - Admin Panel</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #2c3e50;
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: #34495e;
+            color: #fff;
+            border-left-color: #3498db;
+        }
+
+        .sidebar .nav-link.active {
+            background-color: #34495e;
+            color: #fff;
+            border-left-color: #e74c3c;
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 30px;
+        }
+
+        /* Stats Cards */
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .stats-card h6 {
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-card h3 {
+            color: #2c3e50;
+            margin: 10px 0;
+            font-weight: 700;
+        }
+
+        .stats-card .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stats-card.primary .icon { background: #e3f2fd; color: #1976d2; }
+        .stats-card.success .icon { background: #e8f5e9; color: #388e3c; }
+        .stats-card.warning .icon { background: #fff3e0; color: #f57c00; }
+        .stats-card.danger .icon { background: #ffebee; color: #d32f2f; }
+
+        /* Order Status Badges */
+        .badge-pending { background-color: #ffc107; color: #000; }
+        .badge-processing { background-color: #17a2b8; }
+        .badge-shipped { background-color: #6f42c1; }
+        .badge-delivered { background-color: #28a745; }
+        .badge-cancelled { background-color: #dc3545; }
+
+        /* Table Styling */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+            color: #495057;
+        }
+
+        /* Modal Styling */
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            padding: 5px 10px;
+            font-size: 0.875rem;
+            margin: 0 2px;
+        }
+
+        /* Filters */
+        .filter-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        /* Header */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin: -30px -30px 30px -30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .page-header h1 {
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .page-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+
+        /* User Info */
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+
+        .user-info .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e74c3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <div class="p-3">
+                    <h4 class="text-white mb-4">
+                        <i class="fas fa-cog"></i> Admin Panel
+                    </h4>
+                </div>
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="admin-dashboard.php">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="admin-products.php">
+                        <i class="fas fa-box"></i> Productos
+                    </a>
+                    <a class="nav-link active" href="admin-orders.php">
+                        <i class="fas fa-shopping-cart"></i> Pedidos
+                    </a>
+                    <a class="nav-link" href="admin-users-full.php">
+                        <i class="fas fa-users"></i> Usuarios
+                    </a>
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-chart-bar"></i> Reportes
+                    </a>
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-cog"></i> Configuración
+                    </a>
+                    <hr class="bg-white my-3">
+                    <a class="nav-link" href="index.php">
+                        <i class="fas fa-home"></i> Ver Sitio Web
+                    </a>
+                    <a class="nav-link text-danger" href="logout.php" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10">
+                <div class="main-content">
+                    <!-- Header -->
+                    <div class="page-header">
+                        <div class="container-fluid position-relative">
+                            <h1><i class="fas fa-shopping-cart"></i> Gestión de Pedidos</h1>
+                            <p>Administra y gestiona todos los pedidos de tu tienda</p>
+                            <div class="user-info">
+                                <div class="avatar">A</div>
+                                <div class="text-white">
+                                    <small>Admin</small><br>
+                                    <strong>Administrador</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stats-card primary">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6>Total Pedidos</h6>
+                                        <h3 id="totalOrders">0</h3>
+                                        <small class="text-muted">Todos los tiempos</small>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-shopping-basket"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card warning">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6>Pendientes</h6>
+                                        <h3 id="pendingOrders">0</h3>
+                                        <small class="text-muted">Requieren atención</small>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card success">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6>Completados</h6>
+                                        <h3 id="completedOrders">0</h3>
+                                        <small class="text-muted">Este mes</small>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card danger">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6>Ingresos del Mes</h6>
+                                        <h3 id="monthlyRevenue">€0</h3>
+                                        <small class="text-muted">Total facturado</small>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-euro-sign"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filter-container">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Estado del Pedido</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pending">Pendiente</option>
+                                    <option value="processing">Procesando</option>
+                                    <option value="shipped">Enviado</option>
+                                    <option value="delivered">Entregado</option>
+                                    <option value="cancelled">Cancelado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha Desde</label>
+                                <input type="date" class="form-control" id="dateFrom">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha Hasta</label>
+                                <input type="date" class="form-control" id="dateTo">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                    <i class="fas fa-filter"></i> Aplicar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orders Table -->
+                    <div class="table-container">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Lista de Pedidos</h5>
+                            <button class="btn btn-sm btn-success" onclick="exportOrders()">
+                                <i class="fas fa-file-excel"></i> Exportar Excel
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="ordersTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Cliente</th>
+                                        <th>Fecha</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+                                        <th>Método Pago</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles del Pedido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="orderDetailsContent">
+                    <!-- Details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="printOrder()">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // API Configuration
+        const API_URL = '/api-proxy.php?path=';
+        const token = localStorage.getItem('token');
+        let ordersTable;
+        let allOrders = [];
+
+        // Check authentication
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // Headers for API requests
+        const headers = {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOrders();
+            loadOrderStats();
+            
+            // Set date filters to current month
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('dateTo').value = now.toISOString().split('T')[0];
+        });
+
+        // Load order statistics
+        async function loadOrderStats() {
+            try {
+                const response = await fetch(`${API_URL}orders/stats`, { headers });
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalOrders').textContent = stats.total || 0;
+                    document.getElementById('pendingOrders').textContent = stats.pending || 0;
+                    document.getElementById('completedOrders').textContent = stats.completed || 0;
+                }
+
+                // Load monthly revenue
+                const revenueResponse = await fetch(`${API_URL}orders/revenue/monthly`, { headers });
+                if (revenueResponse.ok) {
+                    const revenue = await revenueResponse.json();
+                    const currentMonth = revenue[0] || { total: 0 };
+                    document.getElementById('monthlyRevenue').textContent = `€${currentMonth.total.toFixed(2)}`;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load orders
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${API_URL}orders/admin/all`, { headers });
+                if (response.ok) {
+                    const result = await response.json();
+                    // Manejar diferentes estructuras de respuesta
+                    let orders = [];
+                    if (Array.isArray(result)) {
+                        orders = result;
+                    } else if (result.orders && Array.isArray(result.orders)) {
+                        orders = result.orders;
+                    } else if (result.data && Array.isArray(result.data)) {
+                        orders = result.data;
+                    }
+                    allOrders = orders;
+                    displayOrders(orders);
+                } else {
+                    const errorData = await response.json();
+                    console.error("Error response:", errorData);
+                    showError(errorData.message || "Error al cargar los pedidos");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                showError("Error de conexión");
+            }
+        }
+
+        // Display orders in table
+        function displayOrders(orders) {
+            const tbody = document.getElementById('ordersTableBody');
+            tbody.innerHTML = '';
+
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay pedidos</td></tr>';
+                return;
+            }
+
+            orders.forEach(order => {
+                const row = `
+                    <tr>
+                        <td>#${order.id}</td>
+                        <td>${order.customerName || 'N/A'}</td>
+                        <td>${formatDate(order.createdAt)}</td>
+                        <td>€${order.total.toFixed(2)}</td>
+                        <td>${getStatusBadge(order.status)}</td>
+                        <td>${order.paymentMethod || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info btn-action" onclick="viewOrder(${order.id})" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning btn-action" onclick="editOrderStatus(${order.id}, '${order.status}')" title="Cambiar estado">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-action" onclick="cancelOrder(${order.id})" title="Cancelar pedido" ${order.status === 'cancelled' ? 'disabled' : ''}>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            // Initialize DataTable
+            if (ordersTable) {
+                ordersTable.destroy();
+            }
+            
+            ordersTable = $('#ordersTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                },
+                order: [[0, 'desc']],
+                pageLength: 25
+            });
+        }
+
+        // Get status badge
+        function getStatusBadge(status) {
+            const badges = {
+                'pending': '<span class="badge badge-pending">Pendiente</span>',
+                'processing': '<span class="badge badge-processing">Procesando</span>',
+                'shipped': '<span class="badge badge-shipped">Enviado</span>',
+                'delivered': '<span class="badge badge-delivered">Entregado</span>',
+                'cancelled': '<span class="badge badge-cancelled">Cancelado</span>'
+            };
+            return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+        }
+
+        // View order details
+        async function viewOrder(orderId) {
+            try {
+                const response = await fetch(`${API_URL}orders/${orderId}`, { headers });
+                if (response.ok) {
+                    const order = await response.json();
+                    showOrderDetails(order);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error al cargar los detalles del pedido');
+            }
+        }
+
+        // Show order details in modal
+        function showOrderDetails(order) {
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información del Pedido</h6>
+                        <p><strong>ID:</strong> #${order.id}</p>
+                        <p><strong>Fecha:</strong> ${formatDate(order.createdAt)}</p>
+                        <p><strong>Estado:</strong> ${getStatusBadge(order.status)}</p>
+                        <p><strong>Total:</strong> €${order.total.toFixed(2)}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Información del Cliente</h6>
+                        <p><strong>Nombre:</strong> ${order.customerName || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${order.customerEmail || 'N/A'}</p>
+                        <p><strong>Teléfono:</strong> ${order.customerPhone || 'N/A'}</p>
+                        <p><strong>Dirección:</strong> ${order.shippingAddress || 'N/A'}</p>
+                    </div>
+                </div>
+                <hr>
+                <h6>Productos</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${order.items ? order.items.map(item => `
+                            <tr>
+                                <td>${item.productName}</td>
+                                <td>${item.quantity}</td>
+                                <td>€${item.price.toFixed(2)}</td>
+                                <td>€${(item.quantity * item.price).toFixed(2)}</td>
+                            </tr>
+                        `).join('') : '<tr><td colspan="4">No hay productos</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('orderDetailsContent').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('orderDetailsModal')).show();
+        }
+
+        // Edit order status
+        async function editOrderStatus(orderId, currentStatus) {
+            const { value: newStatus } = await Swal.fire({
+                title: 'Cambiar Estado del Pedido',
+                input: 'select',
+                inputOptions: {
+                    'pending': 'Pendiente',
+                    'processing': 'Procesando',
+                    'shipped': 'Enviado',
+                    'delivered': 'Entregado',
+                    'cancelled': 'Cancelado'
+                },
+                inputValue: currentStatus,
+                showCancelButton: true,
+                confirmButtonText: 'Actualizar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (newStatus && newStatus !== currentStatus) {
+                try {
+                    const response = await fetch(`${API_URL}orders/${orderId}/status`, {
+                        method: 'PUT',
+                        headers,
+                        body: JSON.stringify({ status: newStatus })
+                    });
+
+                    if (response.ok) {
+                        Swal.fire('¡Actualizado!', 'El estado del pedido ha sido actualizado.', 'success');
+                        loadOrders();
+                        loadOrderStats();
+                    } else {
+                        showError('Error al actualizar el estado');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('Error de conexión');
+                }
+            }
+        }
+
+        // Cancel order
+        async function cancelOrder(orderId) {
+            const result = await Swal.fire({
+                title: '¿Cancelar Pedido?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No, mantener'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`${API_URL}orders/${orderId}/cancel`, {
+                        method: 'PUT',
+                        headers
+                    });
+
+                    if (response.ok) {
+                        Swal.fire('¡Cancelado!', 'El pedido ha sido cancelado.', 'success');
+                        loadOrders();
+                        loadOrderStats();
+                    } else {
+                        showError('Error al cancelar el pedido');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('Error de conexión');
+                }
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const status = document.getElementById('statusFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            let filteredOrders = [...allOrders];
+
+            if (status) {
+                filteredOrders = filteredOrders.filter(order => order.status === status);
+            }
+
+            if (dateFrom) {
+                filteredOrders = filteredOrders.filter(order => 
+                    new Date(order.createdAt) >= new Date(dateFrom)
+                );
+            }
+
+            if (dateTo) {
+                filteredOrders = filteredOrders.filter(order => 
+                    new Date(order.createdAt) <= new Date(dateTo + ' 23:59:59')
+                );
+            }
+
+            displayOrders(filteredOrders);
+        }
+
+        // Export orders to Excel (placeholder)
+        function exportOrders() {
+            Swal.fire('Exportar', 'Función de exportación en desarrollo', 'info');
+        }
+
+        // Print order
+        function printOrder() {
+            window.print();
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Show error message
+        function showError(message) {
+            Swal.fire('Error', message, 'error');
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+    </script>
+    <script src="js/script.js"></script>
+    <script src="js/cart.js"></script>
+</body>
+</html>

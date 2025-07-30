@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Order</title>
+</head>
+<body>
+    <h1>Test de Pedido</h1>
+    <button onclick="testOrder()">Crear Pedido de Prueba</button>
+    <div id="result"></div>
+
+    <script>
+    function testOrder() {
+        // Obtener token del sitio
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoib2Jlcmx1c0Btb3JpbGxvLmV1Iiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzUzODcwMjg2LCJleHAiOjE3NTM5NTY2ODZ9.pNBnVvv4FMcKU8nsFsl3ogCJmwZtnrBxpZiJJ5gMVz4'; // Reemplaza con tu token actual
+        
+        fetch('https://webpasarella.dnns.es/api-proxy.php?path=orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                items: [{
+                    id: 1,
+                    product_id: 1, // Añadir product_id
+                    name: "Laptop Profesional",
+                    price: 899.99,
+                    quantity: 1,
+                    unit_price: 899.99,
+                    total_price: 899.99
+                }],
+                shipping_address: {
+                    first_name: "Test",
+                    last_name: "User",
+                    email: "test@test.com",
+                    phone: "123456789",
+                    address: "Calle Test 123",
+                    address2: "",
+                    city: "Madrid",
+                    state: "Madrid",
+                    zip: "28001",
+                    country: "ES"
+                },
+                billing_address: {
+                    same_as_shipping: true
+                },
+                payment_method: "card",
+                notes: "",
+                subtotal: 899.99,
+                shipping_cost: 5.00,
+                tax: 189.00,
+                total_amount: 1093.99
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('result').innerHTML = 
+                '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            if (data.success) {
+                alert('¡Pedido creado! Número: ' + data.order.order_number);
+            }
+        })
+        .catch(error => {
+            document.getElementById('result').innerHTML = 
+                '<pre>Error: ' + error + '</pre>';
+        });
+    }
+    </script>
+</body>
+</html>

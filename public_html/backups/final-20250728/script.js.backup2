@@ -1,0 +1,774 @@
+// Configuración de la API
+const API_URL = '/api-proxy2.php?path='; // Cambiar según tu backend
+
+// Variables globales
+let currentUser = null;
+let cart = [];
+let currentSlide = 0;
+
+// Inicialización cuando el DOM está listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar productos
+    loadProducts();
+    
+    // Cargar carrito desde localStorage
+    loadCart();
+    
+    // Verificar si hay usuario logueado
+    checkAuth();
+    
+    // Iniciar slider automático
+    startSlider();
+    
+    // Event listener para validación de contraseña en registro
+    const passwordInput = document.getElementById('registerPassword');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', checkPasswordStrength);
+    }
+    
+    // Verificar si hay token de verificación en la URL
+    checkEmailVerification();
+});
+
+// ===================== FUNCIONES DE NAVEGACIÓN =====================
+
+// Mostrar diferentes vistas
+function showView(view) {
+    // Ocultar todas las vistas
+    document.getElementById('homeView').style.display = 'none';
+    document.getElementById('cartView').style.display = 'none';
+    document.getElementById('adminView').style.display = 'none';
+    
+    // Mostrar la vista seleccionada
+    if (view === 'home') {
+        document.getElementById('homeView').style.display = 'block';
+    } else if (view === 'cart') {
+        document.getElementById('cartView').style.display = 'block';
+        updateCartView();
+    } else if (view === 'admin') {
+        if (currentUser && currentUser.role === 'admin') {
+            document.getElementById('adminView').style.display = 'block';
+        } else {
+            alert('Acceso denegado. Solo administradores.');
+            showView('home');
+        }
+    }
+}
+
+// Scroll suave a secciones
+function scrollToSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Mostrar sección del panel admin
+function showAdminSection(section) {
+    // Aquí implementarías la lógica para mostrar diferentes secciones del admin
+    console.log('Mostrando sección admin:', section);
+}
+
+// ===================== FUNCIONES DEL SLIDER =====================
+
+// Cambiar slide
+function changeSlide(index) {
+    const slides = document.querySelectorAll('.slider-item');
+    const dots = document.querySelectorAll('.slider-dot');
+    
+    // Ocultar todos los slides
+    slides.forEach(slide => slide.classList.remove('active'));
+    dots.forEach(dot => dot.classList.remove('active'));
+    
+    // Mostrar el slide seleccionado
+    slides[index].classList.add('active');
+    dots[index].classList.add('active');
+    
+    currentSlide = index;
+}
+
+// Iniciar slider automático
+function startSlider() {
+    setInterval(() => {
+        currentSlide = (currentSlide + 1) % 3;
+        changeSlide(currentSlide);
+    }, 5000);
+}
+
+// ===================== FUNCIONES DE PRODUCTOS =====================
+
+// Cargar productos
+function loadProducts() {
+    const products = [
+        {
+            id: 1,
+            name: 'Laptop Profesional',
+            price: 899.99,
+            image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400',
+            description: 'Potente laptop para profesionales'
+        },
+        {
+            id: 2,
+            name: 'Smartphone 5G',
+            price: 699.99,
+            image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400',
+            description: 'Último modelo con tecnología 5G'
+        },
+        {
+            id: 3,
+            name: 'Tablet Ultra',
+            price: 499.99,
+            image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400',
+            description: 'Tablet de alta resolución'
+        },
+        {
+            id: 4,
+            name: 'Auriculares Pro',
+            price: 299.99,
+            image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
+            description: 'Sonido premium con cancelación de ruido'
+        },
+        {
+            id: 5,
+            name: 'Smartwatch Sport',
+            price: 399.99,
+            image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+            description: 'Reloj inteligente para deportistas'
+        },
+        {
+            id: 6,
+            name: 'Cámara 4K',
+            price: 1299.99,
+            image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400',
+            description: 'Cámara profesional 4K'
+        }
+    ];
+    
+    const productsContainer = document.getElementById('productsList');
+    productsContainer.innerHTML = '';
+    
+    products.forEach(product => {
+        const productCard = `
+            <div class="col-md-4">
+                <div class="card product-card h-100">
+                    <img src="${product.image}" class="card-img-top" alt="${product.name}">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">${product.name}</h5>
+                        <p class="card-text">${product.description}</p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0 text-primary">€${product.price}</span>
+                                <button class="btn btn-primary" onclick="addToCart(${product.id}, '${product.name}', ${product.price})">
+                                    <i class="fas fa-cart-plus"></i> Añadir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        productsContainer.innerHTML += productCard;
+    });
+}
+
+// ===================== FUNCIONES DEL CARRITO =====================
+
+// Añadir al carrito
+function addToCart(id, name, price) {
+    const existingItem = cart.find(item => item.id === id);
+    
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({
+            id: id,
+            name: name,
+            price: price,
+            quantity: 1
+        });
+    }
+    
+    saveCart();
+    updateCartCount();
+    showNotification('Producto añadido al carrito');
+}
+
+// Guardar carrito en localStorage
+function saveCart() {
+    localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+// Cargar carrito desde localStorage
+function loadCart() {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+        cart = JSON.parse(savedCart);
+        updateCartCount();
+    }
+}
+
+// Actualizar contador del carrito
+function updateCartCount() {
+    const count = cart.reduce((total, item) => total + item.quantity, 0);
+    document.getElementById('cartCount').textContent = count;
+}
+
+// Actualizar vista del carrito
+function updateCartView() {
+    const cartItemsContainer = document.getElementById('cartItems');
+    
+    if (cart.length === 0) {
+        cartItemsContainer.innerHTML = '<p class="text-center">Tu carrito está vacío</p>';
+        document.getElementById('cartSubtotal').textContent = '€0.00';
+        document.getElementById('cartTax').textContent = '€0.00';
+        document.getElementById('cartTotal').textContent = '€0.00';
+        return;
+    }
+    
+    let html = '';
+    let subtotal = 0;
+    
+    cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+        
+        html += `
+            <div class="cart-item mb-3 pb-3 border-bottom">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h6>${item.name}</h6>
+                        <small class="text-muted">€${item.price.toFixed(2)}</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group input-group-sm">
+                            <button class="btn btn-outline-secondary" onclick="updateQuantity(${item.id}, -1)">-</button>
+                            <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
+                            <button class="btn btn-outline-secondary" onclick="updateQuantity(${item.id}, 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <strong>€${itemTotal.toFixed(2)}</strong>
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button class="btn btn-sm btn-danger" onclick="removeFromCart(${item.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    cartItemsContainer.innerHTML = html;
+    
+    // Actualizar totales
+    const tax = subtotal * 0.21;
+    const total = subtotal + tax;
+    
+    document.getElementById('cartSubtotal').textContent = `€${subtotal.toFixed(2)}`;
+    document.getElementById('cartTax').textContent = `€${tax.toFixed(2)}`;
+    document.getElementById('cartTotal').textContent = `€${total.toFixed(2)}`;
+}
+
+// Actualizar cantidad
+function updateQuantity(id, change) {
+    const item = cart.find(item => item.id === id);
+    if (item) {
+        item.quantity += change;
+        if (item.quantity <= 0) {
+            removeFromCart(id);
+        } else {
+            saveCart();
+            updateCartCount();
+            updateCartView();
+        }
+    }
+}
+
+// Eliminar del carrito
+function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    saveCart();
+    updateCartCount();
+    updateCartView();
+}
+
+// Proceder al pago
+function proceedToCheckout() {
+    if (!currentUser) {
+        alert('Por favor, inicia sesión para continuar con el pago');
+        showLogin();
+        return;
+    }
+    
+    if (cart.length === 0) {
+        alert('Tu carrito está vacío');
+        return;
+    }
+    
+    // Actualizar total en el modal de pago
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 1.21;
+    document.getElementById('paymentTotal').textContent = `€${total.toFixed(2)}`;
+    
+    // Mostrar modal de pago
+    const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    paymentModal.show();
+}
+
+// Procesar pago
+function processPayment(event) {
+    event.preventDefault();
+    
+    // Simular procesamiento de pago
+    showNotification('Procesando pago...', 'info');
+    
+    setTimeout(() => {
+        // Limpiar carrito
+        cart = [];
+        saveCart();
+        updateCartCount();
+        
+        // Cerrar modal
+        const paymentModal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
+        paymentModal.hide();
+        
+        // Mostrar confirmación
+        showNotification('¡Pago completado con éxito! Gracias por tu compra.', 'success');
+        
+        // Volver a inicio
+        showView('home');
+    }, 2000);
+}
+
+// ===================== FUNCIONES DE AUTENTICACIÓN =====================
+
+// Verificar autenticación
+function checkAuth() {
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
+    
+    if (token && userData) {
+        currentUser = JSON.parse(userData);
+        updateAuthUI();
+    }
+}
+
+// Actualizar UI según autenticación
+function updateAuthUI() {
+    const authButton = document.getElementById('authButton');
+    
+    if (currentUser) {
+        authButton.innerHTML = `
+            <div class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user"></i> ${currentUser.firstName}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="showProfile()">Mi Perfil</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="showOrders()">Mis Pedidos</a></li>
+                    ${currentUser.role === 'admin' ? '<li><a class="dropdown-item" href="#" onclick="showView(\'admin\')">Panel Admin</a></li>' : ''}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        `;
+    } else {
+        authButton.innerHTML = `
+            <button class="btn btn-outline-light" onclick="showLogin()">
+                <i class="fas fa-user"></i> Iniciar Sesión
+            </button>
+        `;
+    }
+}
+
+// Mostrar modal de login
+function showLogin() {
+    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+    loginModal.show();
+}
+
+// Toggle password visibility
+function togglePassword() {
+    const passwordInput = document.getElementById('loginPassword');
+    const passwordIcon = document.getElementById('passwordIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordIcon.classList.remove('fa-eye');
+        passwordIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        passwordIcon.classList.remove('fa-eye-slash');
+        passwordIcon.classList.add('fa-eye');
+    }
+}
+
+// Manejar login
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    try {
+        const response = await fetch('/api-proxy2.php?path=auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Guardar token y datos de usuario
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('userData', JSON.stringify(data.user));
+            currentUser = data.user;
+            
+            // Cerrar modal
+            const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            loginModal.hide();
+            
+            // Actualizar UI
+            updateAuthUI();
+            showNotification(`¡Bienvenido, ${data.user.firstName}!`, 'success');
+            
+            // Si es admin, mostrar panel admin
+            if (data.user.role === 'admin') {
+                showView('admin');
+            }
+        } else {
+            showNotification(data.message || 'Error al iniciar sesión', 'error');
+        }
+    } catch (error) {
+        console.error('Error de login:', error);
+        showNotification('Error de conexión', 'error');
+    }
+}
+
+// Cerrar sesión
+function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    currentUser = null;
+    updateAuthUI();
+    showView('home');
+    showNotification('Sesión cerrada correctamente');
+}
+
+// ===================== FUNCIONES DE REGISTRO =====================
+
+// Función para cambiar de login a registro
+function switchToRegister() {
+    const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+    loginModal.hide();
+    setTimeout(() => {
+        const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+        registerModal.show();
+    }, 300);
+}
+
+// Función para cambiar de registro a login
+function switchToLogin() {
+    const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+    registerModal.hide();
+    setTimeout(() => {
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    }, 300);
+}
+
+// Toggle password visibility para registro
+function toggleRegisterPassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = event.currentTarget.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Validación de fuerza de contraseña
+function checkPasswordStrength(event) {
+    const password = event.target.value;
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('passwordStrengthText');
+    
+    let strength = 0;
+    let strengthClass = '';
+    let strengthMessage = '';
+    
+    // Criterios de fuerza
+    if (password.length >= 8) strength += 25;
+    if (password.match(/[a-z]+/)) strength += 25;
+    if (password.match(/[A-Z]+/)) strength += 25;
+    if (password.match(/[0-9]+/)) strength += 12.5;
+    if (password.match(/[$@#&!]+/)) strength += 12.5;
+    
+    // Determinar nivel de fuerza
+    if (strength <= 25) {
+        strengthClass = 'bg-danger';
+        strengthMessage = 'Contraseña muy débil';
+    } else if (strength <= 50) {
+        strengthClass = 'bg-warning';
+        strengthMessage = 'Contraseña débil';
+    } else if (strength <= 75) {
+        strengthClass = 'bg-info';
+        strengthMessage = 'Contraseña media';
+    } else {
+        strengthClass = 'bg-success';
+        strengthMessage = 'Contraseña fuerte';
+    }
+    
+    // Actualizar UI
+    strengthBar.style.width = strength + '%';
+    strengthBar.className = 'progress-bar ' + strengthClass;
+    strengthText.textContent = strengthMessage;
+    
+    // Validar contraseña mínima
+    if (password.length < 8) {
+        event.target.classList.add('is-invalid');
+    } else {
+        event.target.classList.remove('is-invalid');
+    }
+}
+
+// Manejar el registro
+async function handleRegister(event) {
+    event.preventDefault();
+    
+    // Resetear errores
+    document.getElementById('registerError').classList.add('d-none');
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    
+    // Obtener valores del formulario
+    const formData = {
+        name: document.getElementById('registerName').value.trim(),
+        lastName: document.getElementById('registerLastName').value.trim(),
+        email: document.getElementById('registerEmail').value.trim(),
+        phone: document.getElementById('registerPhone').value.trim(),
+        password: document.getElementById('registerPassword').value,
+        passwordConfirm: document.getElementById('registerPasswordConfirm').value,
+        acceptTerms: document.getElementById('registerTerms').checked,
+        newsletter: document.getElementById('registerNewsletter').checked
+    };
+    
+    // Validaciones
+    if (!validateRegistrationForm(formData)) {
+        return;
+    }
+    
+    // Mostrar spinner
+    showLoadingState(true);
+    
+    try {
+        // Llamar a la API de registro
+        const response = await fetch(`'/api-proxy2.php?path=auth/register'`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                firstName: formData.name,
+                lastName: formData.lastName,
+                email: formData.email,
+                phone: formData.phone,
+                password: formData.password,
+                newsletter: formData.newsletter
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Registro exitoso
+            handleRegistrationSuccess(formData.email);
+        } else {
+            // Error en el registro
+            showRegistrationError(data.message || 'Error al crear la cuenta');
+        }
+    } catch (error) {
+        console.error('Error de registro:', error);
+        showRegistrationError('Error de conexión. Por favor, intenta más tarde.');
+    } finally {
+        showLoadingState(false);
+    }
+}
+
+// Validar formulario de registro
+function validateRegistrationForm(formData) {
+    let isValid = true;
+    
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+        document.getElementById('registerEmail').classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    // Validar contraseña
+    if (formData.password.length < 8) {
+        document.getElementById('registerPassword').classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    // Validar confirmación de contraseña
+    if (formData.password !== formData.passwordConfirm) {
+        document.getElementById('registerPasswordConfirm').classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    // Validar términos
+    if (!formData.acceptTerms) {
+        document.getElementById('registerTerms').classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    return isValid;
+}
+
+// Mostrar estado de carga
+function showLoadingState(loading) {
+    const submitBtn = document.getElementById('registerSubmitBtn');
+    const btnText = document.getElementById('registerBtnText');
+    const spinner = document.getElementById('registerSpinner');
+    
+    if (loading) {
+        submitBtn.disabled = true;
+        btnText.textContent = 'Creando cuenta...';
+        spinner.classList.remove('d-none');
+    } else {
+        submitBtn.disabled = false;
+        btnText.textContent = 'Crear Cuenta';
+        spinner.classList.add('d-none');
+    }
+}
+
+// Mostrar error de registro
+function showRegistrationError(message) {
+    const errorDiv = document.getElementById('registerError');
+    const errorMessage = document.getElementById('registerErrorMessage');
+    
+    errorMessage.textContent = message;
+    errorDiv.classList.remove('d-none');
+}
+
+// Manejar registro exitoso
+function handleRegistrationSuccess(email) {
+    // Cerrar modal de registro
+    const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+    registerModal.hide();
+    
+    // Mostrar modal de verificación
+    document.getElementById('verificationEmail').textContent = email;
+    const verificationModal = new bootstrap.Modal(document.getElementById('verificationModal'));
+    verificationModal.show();
+    
+    // Limpiar formulario
+    document.getElementById('registerForm').reset();
+}
+
+// Reenviar email de verificación
+async function resendVerification() {
+    const email = document.getElementById('verificationEmail').textContent;
+    
+    try {
+        const response = await fetch(`'/api-proxy2.php?path=auth/resend-verification'`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        if (response.ok) {
+            showNotification('Email de verificación reenviado. Por favor, revisa tu bandeja de entrada.', 'success');
+        } else {
+            showNotification('Error al reenviar el email. Por favor, intenta más tarde.', 'error');
+        }
+    } catch (error) {
+        console.error('Error al reenviar verificación:', error);
+        showNotification('Error de conexión. Por favor, intenta más tarde.', 'error');
+    }
+}
+
+// Cerrar modal de verificación
+function closeVerificationModal() {
+    const verificationModal = bootstrap.Modal.getInstance(document.getElementById('verificationModal'));
+    verificationModal.hide();
+}
+
+// Verificar email desde URL
+function checkEmailVerification() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (token && window.location.hash === '#verify-email') {
+        verifyEmail(token);
+    }
+}
+
+// Función para verificar email
+async function verifyEmail(token) {
+    try {
+        const response = await fetch(`'/api-proxy2.php?path=auth/verify-email/'${token}`, {
+            method: 'GET'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification('¡Email verificado exitosamente! Ya puedes iniciar sesión.', 'success');
+            // Mostrar modal de login
+            setTimeout(() => {
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+            }, 1500);
+        } else {
+            showNotification(data.message || 'Error al verificar el email.', 'error');
+        }
+    } catch (error) {
+        console.error('Error de verificación:', error);
+        showNotification('Error de conexión. Por favor, intenta más tarde.', 'error');
+    }
+}
+
+// ===================== FUNCIONES DE UTILIDAD =====================
+
+// Mostrar notificaciones
+function showNotification(message, type = 'info') {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Agregar al body
+    document.body.appendChild(notification);
+    
+    // Auto-cerrar después de 5 segundos
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+// Mostrar perfil (placeholder)
+function showProfile() {
+    alert('Función de perfil próximamente');
+}
+
+// Mostrar pedidos (placeholder)
+function showOrders() {
+    alert('Función de pedidos próximamente');
+}

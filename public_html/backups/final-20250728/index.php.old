@@ -1,0 +1,826 @@
+<?php
+// Manejar registro si se envía por POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'register') {
+    header('Content-Type: application/json');
+    
+    // Preparar datos
+    $data = array(
+        "firstName" => $_POST['firstName'] ?? '',
+        "lastName" => $_POST['lastName'] ?? '',
+        "email" => $_POST['email'] ?? '',
+        "password" => $_POST['password'] ?? '',
+        "phone" => $_POST['phone'] ?? '',
+        "newsletter" => isset($_POST['newsletter']) ? true : false
+    );
+    
+    // Ajustar teléfono
+    if (!empty($data['phone']) && !str_starts_with($data['phone'], '+')) {
+        if (preg_match('/^[67]\d{8}$/', $data['phone'])) {
+            $data['phone'] = '+34' . $data['phone'];
+        }
+    }
+    
+    // Enviar al backend
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'ignore_errors' => true
+        )
+    );
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents('http://localhost:3001/api/auth/register', false, $context);
+    
+    echo $result;
+    exit;
+}
+
+// Manejar login si se envía por POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
+    header('Content-Type: application/json');
+    
+    $data = array(
+        "email" => $_POST['email'] ?? '',
+        "password" => $_POST['password'] ?? ''
+    );
+    
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'ignore_errors' => true
+        )
+    );
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents('http://localhost:3001/api/auth/login', false, $context);
+    
+    echo $result;
+    exit;
+}
+?>
+<?php
+// Manejar registro si se envía por POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'register') {
+    header('Content-Type: application/json');
+    
+    // Preparar datos
+    $data = array(
+        "firstName" => $_POST['firstName'] ?? '',
+        "lastName" => $_POST['lastName'] ?? '',
+        "email" => $_POST['email'] ?? '',
+        "password" => $_POST['password'] ?? '',
+        "phone" => $_POST['phone'] ?? '',
+        "newsletter" => isset($_POST['newsletter']) ? true : false
+    );
+    
+    // Ajustar teléfono
+    if (!empty($data['phone']) && !str_starts_with($data['phone'], '+')) {
+        if (preg_match('/^[67]\d{8}$/', $data['phone'])) {
+            $data['phone'] = '+34' . $data['phone'];
+        }
+    }
+    
+    // Enviar al backend
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'ignore_errors' => true
+        )
+    );
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents('http://localhost:3001/api/auth/register', false, $context);
+    
+    echo $result;
+    exit;
+}
+
+// Manejar login si se envía por POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
+    header('Content-Type: application/json');
+    
+    $data = array(
+        "email" => $_POST['email'] ?? '',
+        "password" => $_POST['password'] ?? ''
+    );
+    
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'ignore_errors' => true
+        )
+    );
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents('http://localhost:3001/api/auth/login', false, $context);
+    
+    echo $result;
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebPasarella - Tu Solución E-Commerce</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#home" onclick="showView('home')">
+                <i class="fas fa-store"></i> Webprueba.com
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home" onclick="showView('home')">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#productos" onclick="scrollToSection('productos')">Productos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#precios" onclick="scrollToSection('precios')">Precios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#blog" onclick="scrollToSection('blog')">Blog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="#" onclick="showView('cart')">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-badge" id="cartCount">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item ms-3" id="authButton">
+                        <button class="btn btn-outline-light" onclick="showLogin()">
+                            <i class="fas fa-user"></i> Iniciar Sesión
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div id="mainContent">
+        <!-- Home View -->
+        <div id="homeView">
+            <!-- Hero Slider -->
+            <div class="hero-slider">
+                <div class="slider-content">
+                    <h1 class="display-4 fw-bold mb-3" id="sliderTitle">Bienvenido a Webprueba</h1>
+                    <p class="lead" id="sliderSubtitle">Tu solución integral de comercio electrónico</p>
+                    <button class="btn btn-lg btn-light mt-3" onclick="scrollToSection('productos')">
+                        Explorar Productos
+                    </button>
+                </div>
+                <div class="slider-item active">
+                    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200" alt="Slide 1">
+                </div>
+                <div class="slider-item">
+                    <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200" alt="Slide 2">
+                </div>
+                <div class="slider-item">
+                    <img src="https://images.unsplash.com/photo-1556155092-490a1ba16284?w=1200" alt="Slide 3">
+                </div>
+                <div class="slider-controls">
+                    <span class="slider-dot active" onclick="changeSlide(0)"></span>
+                    <span class="slider-dot" onclick="changeSlide(1)"></span>
+                    <span class="slider-dot" onclick="changeSlide(2)"></span>
+                </div>
+            </div>
+
+            <!-- Pricing Section -->
+            <section id="precios" class="py-5">
+                <div class="container">
+                    <h2 class="text-center mb-5">Planes y Precios Nass Virtuales</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="pricing-card card">
+                                <div class="pricing-header">
+                                    <h3>Básico</h3>
+                                    <div class="price-tag">€15.00<small>/mes</small></div>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 500 Gb Raid</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 4 Hilos cpu</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 4 Gb Ram</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> QuickConnect Personalizado </li>
+                                    </ul>
+                                    <button class="btn btn-outline-primary w-100">Seleccionar Plan</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="pricing-card card recommended">
+                                <div class="pricing-header">
+                                    <span class="badge bg-warning text-dark">RECOMENDADO</span>
+                                    <h3>Profesional</h3>
+                                    <div class="price-tag">€20.00<small>/mes</small></div>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 1 Tb Raid</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 8 Hilos cpu</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 4 Gb Ram</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> QuickConnect Personalizado</li>
+                                    </ul>
+                                    <button class="btn btn-primary w-100">Seleccionar Plan</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="pricing-card card">
+                                <div class="pricing-header">
+                                    <h3>Empresarial</h3>
+                                    <div class="price-tag">€30.00<small>/mes</small></div>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 2 Tb Raid</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 8 Hilos cpu</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> 10 Gb Ram</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> QuickConnect Personalizado</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Posibilidad de puertos extras</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success"></i> Soporte instalacion App</li>
+                                    </ul>
+                                    <button class="btn btn-outline-primary w-100">Seleccionar Plan</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Products Section -->
+            <section id="productos" class="py-5 bg-light">
+                <div class="container">
+                    <h2 class="text-center mb-5">Nuestros Productos</h2>
+                    <div class="row g-4" id="productsList">
+                        <!-- Products will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Blog Section -->
+            <section id="blog" class="py-5">
+                <div class="container">
+                    <h2 class="text-center mb-5">Blog y Noticias</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="blog-card card">
+                                <img src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=400" class="card-img-top" alt="Blog 1">
+                                <div class="card-body">
+                                    <div class="text-muted small mb-2">
+                                        <i class="far fa-calendar"></i> 26 Jul 2025
+                                    </div>
+                                    <h5 class="card-title">Nuevas Funcionalidades 2025</h5>
+                                    <p class="card-text">Descubre las últimas actualizaciones de nuestra plataforma...</p>
+                                    <a href="#" class="btn btn-sm btn-primary">Leer más</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="blog-card card">
+                                <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400" class="card-img-top" alt="Blog 2">
+                                <div class="card-body">
+                                    <div class="text-muted small mb-2">
+                                        <i class="far fa-calendar"></i> 25 Jul 2025
+                                    </div>
+                                    <h5 class="card-title">Guía de Comercio Electrónico</h5>
+                                    <p class="card-text">Aprende las mejores prácticas para tu tienda online...</p>
+                                    <a href="#" class="btn btn-sm btn-primary">Leer más</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="blog-card card">
+                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400" class="card-img-top" alt="Blog 3">
+                                <div class="card-body">
+                                    <div class="text-muted small mb-2">
+                                        <i class="far fa-calendar"></i> 24 Jul 2025
+                                    </div>
+                                    <h5 class="card-title">Tendencias del Mercado</h5>
+                                    <p class="card-text">Análisis de las últimas tendencias en e-commerce...</p>
+                                    <a href="#" class="btn btn-sm btn-primary">Leer más</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Cart View -->
+        <div id="cartView" style="display: none;">
+            <div class="container py-5">
+                <h2 class="mb-4">Carrito de Compras</h2>
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-body" id="cartItems">
+                                <!-- Cart items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Resumen del Pedido</h5>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span id="cartSubtotal">€0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>IVA (21%):</span>
+                                    <span id="cartTax">€0.00</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <strong>Total:</strong>
+                                    <strong id="cartTotal">€0.00</strong>
+                                </div>
+                                <button class="btn btn-primary w-100" onclick="proceedToCheckout()">
+                                    <i class="fas fa-credit-card"></i> Proceder al Pago
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminView" style="display: none;">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-2 p-0">
+                        <nav class="admin-sidebar">
+                            <ul class="nav flex-column">
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="#" onclick="showAdminSection('dashboard')">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" onclick="showAdminSection('products')">
+                                        <i class="fas fa-box"></i> Productos
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" onclick="showAdminSection('orders')">
+                                        <i class="fas fa-shopping-cart"></i> Pedidos
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" onclick="showAdminSection('users')">
+                                        <i class="fas fa-users"></i> Usuarios
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" onclick="showAdminSection('settings')">
+                                        <i class="fas fa-cog"></i> Configuración
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    <div class="col-md-10">
+                        <div class="p-4" id="adminContent">
+                            <!-- Admin Dashboard -->
+                            <div id="adminDashboard">
+                                <h2 class="mb-4">Panel de Administración</h2>
+                                <div class="row g-4">
+                                    <div class="col-md-3">
+                                        <div class="stats-card">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="text-muted">Ventas Totales</h6>
+                                                    <h3>€12,345</h3>
+                                                    <small class="text-success"><i class="fas fa-arrow-up"></i> +12%</small>
+                                                </div>
+                                                <div class="ms-3">
+                                                    <i class="fas fa-chart-line fa-2x text-primary"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stats-card">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="text-muted">Pedidos</h6>
+                                                    <h3>256</h3>
+                                                    <small class="text-success"><i class="fas fa-arrow-up"></i> +8%</small>
+                                                </div>
+                                                <div class="ms-3">
+                                                    <i class="fas fa-shopping-bag fa-2x text-success"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stats-card">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="text-muted">Clientes</h6>
+                                                    <h3>1,234</h3>
+                                                    <small class="text-success"><i class="fas fa-arrow-up"></i> +15%</small>
+                                                </div>
+                                                <div class="ms-3">
+                                                    <i class="fas fa-users fa-2x text-info"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stats-card">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="text-muted">Productos</h6>
+                                                    <h3>45</h3>
+                                                    <small class="text-warning"><i class="fas fa-minus"></i> 0%</small>
+                                                </div>
+                                                <div class="ms-3">
+                                                    <i class="fas fa-box fa-2x text-warning"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-4">
+                                    <div class="col-md-8">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Ventas Recientes</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Cliente</th>
+                                                            <th>Producto</th>
+                                                            <th>Total</th>
+                                                            <th>Estado</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>#1234</td>
+                                                            <td>Juan García</td>
+                                                            <td>Laptop Profesional</td>
+                                                            <td>€899.99</td>
+                                                            <td><span class="badge bg-success">Completado</span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>#1235</td>
+                                                            <td>María López</td>
+                                                            <td>Smartphone 5G</td>
+                                                            <td>€699.99</td>
+                                                            <td><span class="badge bg-warning">Pendiente</span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>#1236</td>
+                                                            <td>Carlos Ruiz</td>
+                                                            <td>Tablet Ultra</td>
+                                                            <td>€499.99</td>
+                                                            <td><span class="badge bg-info">Enviado</span></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Actividad Reciente</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="activity-item mb-3">
+                                                    <i class="fas fa-shopping-cart text-primary"></i>
+                                                    <small class="ms-2">Nuevo pedido #1237</small>
+                                                    <small class="text-muted d-block ms-4">Hace 5 minutos</small>
+                                                </div>
+                                                <div class="activity-item mb-3">
+                                                    <i class="fas fa-user-plus text-success"></i>
+                                                    <small class="ms-2">Nuevo cliente registrado</small>
+                                                    <small class="text-muted d-block ms-4">Hace 15 minutos</small>
+                                                </div>
+                                                <div class="activity-item mb-3">
+                                                    <i class="fas fa-box text-warning"></i>
+                                                    <small class="ms-2">Stock bajo: Auriculares Pro</small>
+                                                    <small class="text-muted d-block ms-4">Hace 1 hora</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Iniciar Sesión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="loginEmail" required>
+                            <small class="text-muted">Usa admin@webprueba.com para acceso admin</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="loginPassword" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                    <i class="fas fa-eye" id="passwordIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                    </form>
+                    <hr>
+                    <p class="text-center mb-0">¿No tienes cuenta? <a href="#" onclick="switchToRegister()">Regístrate aquí</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crear Cuenta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="registerForm" onsubmit="handleRegister(event)">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="registerName" required>
+                                    <div class="invalid-feedback">Por favor ingresa tu nombre</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="registerLastName" required>
+                                    <div class="invalid-feedback">Por favor ingresa tus apellidos</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="registerEmail" required>
+                            <div class="invalid-feedback">Por favor ingresa un email válido</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="registerPhone" placeholder="+34 600 123 456">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="registerPassword" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleRegisterPassword('registerPassword')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength mt-2">
+                                        <div class="progress" style="height: 5px;">
+                                            <div class="progress-bar" id="passwordStrengthBar" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                        <small class="text-muted" id="passwordStrengthText">La contraseña debe tener al menos 8 caracteres</small>
+                                    </div>
+                                    <div class="invalid-feedback">La contraseña es demasiado débil</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="registerPasswordConfirm" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleRegisterPassword('registerPasswordConfirm')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback">Las contraseñas no coinciden</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="registerTerms" required>
+                                <label class="form-check-label" for="registerTerms">
+                                    Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">términos y condiciones</a> y la <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">política de privacidad</a> <span class="text-danger">*</span>
+                                </label>
+                                <div class="invalid-feedback">Debes aceptar los términos y condiciones</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="registerNewsletter">
+                                <label class="form-check-label" for="registerNewsletter">
+                                    Deseo recibir ofertas y novedades por email
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-danger d-none" id="registerError">
+                            <i class="fas fa-exclamation-circle"></i> <span id="registerErrorMessage"></span>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100" id="registerSubmitBtn">
+                            <span id="registerBtnText">Crear Cuenta</span>
+                            <span class="spinner-border spinner-border-sm ms-2 d-none" id="registerSpinner"></span>
+                        </button>
+                    </form>
+                    <hr>
+                    <p class="text-center mb-0">¿Ya tienes cuenta? <a href="#" onclick="switchToLogin()">Inicia sesión aquí</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Verification Modal -->
+    <div class="modal fade" id="verificationModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Verifica tu Email</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-envelope fa-4x text-primary mb-3"></i>
+                    <h6>¡Casi listo!</h6>
+                    <p>Hemos enviado un email de verificación a:</p>
+                    <p class="fw-bold" id="verificationEmail"></p>
+                    <p class="text-muted">Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación para activar tu cuenta.</p>
+                    <hr>
+                    <p class="mb-0">¿No recibiste el email? 
+                        <a href="#" onclick="resendVerification()">Reenviar email</a>
+                    </p>
+                    <button type="button" class="btn btn-secondary mt-3" onclick="closeVerificationModal()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Proceso de Pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentForm" onsubmit="processPayment(event)">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Información de Facturación</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre Completo</label>
+                                    <input type="text" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Dirección</label>
+                                    <input type="text" class="form-control" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Ciudad</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Código Postal</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Información de Pago</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Número de Tarjeta</label>
+                                    <input type="text" class="form-control" placeholder="1234 5678 9012 3456" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Fecha de Expiración</label>
+                                        <input type="text" class="form-control" placeholder="MM/YY" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">CVV</label>
+                                        <input type="text" class="form-control" placeholder="123" required>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-lock"></i> Tu información de pago está segura y encriptada.
+                                </div>
+                                <div class="mt-4">
+                                    <h6>Resumen del Pedido</h6>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Total:</span>
+                                        <strong id="paymentTotal">€0.00</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-lock"></i> Completar Pago
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Webprueba.com</h5>
+                    <p>Tu solución integral para comercio electrónico. Gestiona tu negocio de forma eficiente.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Enlaces Rápidos</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white-50">Términos y Condiciones</a></li>
+                        <li><a href="#" class="text-white-50">Política de Privacidad</a></li>
+                        <li><a href="https://webpasarella.dnns.es/contacto/" class="text-white-50" target="_blank">Contacto</a></li>
+    
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contacto</h5>
+                    <p class="text-white-50">
+                        <i class="fas fa-envelope"></i> info@webprueba.com<br>
+                        <i class="fas fa-phone"></i> +34 900 123 456
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4 bg-white-50">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2025 Oberluss. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="js/script.js"></script>
+</body>
+</html>

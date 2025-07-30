@@ -1,0 +1,14 @@
+<?php
+/* 
+ * ARCHIVO: api-tests.http
+ * =========================================
+ * REEMPLAZAR CON CONTENIDO DEL ARTIFACT: api-tests
+ * 
+ * Solicita al asistente:
+ * "Muéstrame el artifact api-tests"
+ * 
+ * Luego copia todo el contenido aquí.
+ * =========================================
+ */
+?>
+<!-- Contenido del artifact api-tests va aquí -->

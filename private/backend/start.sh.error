@@ -1,0 +1,204 @@
+# 🔄 Comparación de Scripts de Inicio
+
+## 📊 Tabla Comparativa
+
+| Característica | start.sh | start-server.sh |
+|----------------|----------|-----------------|
+| **Gestor de Procesos** | PM2 ✅ | nohup ⚠️ |
+| **Instalación automática** | Sí (PM2, deps) | No |
+| **Manejo de .env** | Sí | No |
+| **Detiene proceso anterior** | No (PM2 lo maneja) | Sí |
+| **Logs** | PM2 logs | server.log |
+| **Monitoreo** | PM2 status/monit | Manual |
+| **Auto-restart** | Sí (PM2) | No |
+| **Complejidad** | Alta | Baja |
+| **Uso recomendado** | Producción | Desarrollo/Debug |
+
+## 🎯 Análisis Detallado
+
+### 📄 **start.sh** - Script Completo con PM2
+**Ventajas:**
+- ✅ PM2 reinicia automáticamente si falla
+- ✅ Mejor gestión de logs
+- ✅ Monitoreo incluido
+- ✅ Instala todo lo necesario
+- ✅ Profesional para producción
+
+**Desventajas:**
+- ❌ Más complejo
+- ❌ Requiere PM2 global
+
+### 📄 **start-server.sh** - Script Simple con nohup
+**Ventajas:**
+- ✅ Simple y directo
+- ✅ Útil para debugging
+- ✅ No requiere PM2
+- ✅ Mata procesos anteriores
+
+**Desventajas:**
+- ❌ No reinicia si falla
+- ❌ Gestión manual de logs
+- ❌ Sin monitoreo automático
+
+## 🚀 RECOMENDACIÓN
+
+### Opción 1: Mantener AMBOS con nombres descriptivos ✅
+```bash
+# Renombrar para claridad
+mv start.sh start-production.sh
+mv start-server.sh start-development.sh
+```
+
+### Opción 2: Unificar en un solo script
+```bash
+#!/bin/bash
+# start.sh unificado
+
+# Verificar parámetro
+MODE=${1:-production}
+
+if [ "$MODE" = "dev" ] || [ "$MODE" = "development" ]; then
+    echo "🔧 Iniciando en modo DESARROLLO..."
+    # Código de start-server.sh aquí
+    pkill -f "node server.js" 2>/dev/null
+    nohup node server.js >> server.log 2>&1 &
+else
+    echo "🚀 Iniciando en modo PRODUCCIÓN..."
+    # Código de start.sh aquí
+    pm2 start ecosystem.config.js
+fi
+```
+
+### Uso:
+```bash
+./start.sh          # Producción (PM2)
+./start.sh dev      # Desarrollo (nohup)
+```
+
+## 📝 Script Unificado Completo
+
+```bash
+#!/bin/bash
+# Script unificado de inicio para WebPasarella
+
+# Colores
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Configuración
+SERVER_DIR="$(dirname "$0")"
+MODE=${1:-production}
+
+cd "$SERVER_DIR"
+
+echo -e "${YELLOW}WebPasarella Starter${NC}"
+echo "======================="
+
+# Verificar Node.js
+if ! command -v node &> /dev/null; then
+    echo -e "${RED}❌ Node.js no está instalado${NC}"
+    exit 1
+fi
+
+# Instalar dependencias si no existen
+if [ ! -d "node_modules" ]; then
+    echo "📦 Instalando dependencias..."
+    npm install
+fi
+
+# Verificar .env
+if [ ! -f ".env" ]; then
+    if [ -f ".env.example" ]; then
+        echo "📝 Creando archivo .env..."
+        cp .env.example .env
+        echo -e "${YELLOW}⚠️  IMPORTANTE: Edita el archivo .env con tus credenciales${NC}"
+    else
+        echo -e "${RED}❌ No se encuentra .env ni .env.example${NC}"
+        exit 1
+    fi
+fi
+
+# Modo de inicio
+if [ "$MODE" = "dev" ] || [ "$MODE" = "development" ]; then
+    echo -e "${GREEN}🔧 Modo DESARROLLO${NC}"
+    
+    # Detener servidor anterior
+    if pgrep -f "node server.js" > /dev/null; then
+        echo "Deteniendo servidor anterior..."
+        pkill -f "node server.js"
+        sleep 2
+    fi
+    
+    # Iniciar con nohup
+    echo "Iniciando servidor..."
+    nohup node server.js >> server.log 2>&1 &
+    
+    sleep 3
+    if pgrep -f "node server.js" > /dev/null; then
+        echo -e "${GREEN}✓ Servidor iniciado${NC}"
+        echo "PID: $(pgrep -f 'node server.js')"
+        echo "Logs: tail -f server.log"
+    else
+        echo -e "${RED}✗ Error al iniciar${NC}"
+        tail -10 server.log
+    fi
+    
+else
+    echo -e "${GREEN}🚀 Modo PRODUCCIÓN${NC}"
+    
+    # Verificar PM2
+    if ! command -v pm2 &> /dev/null; then
+        echo "📦 Instalando PM2..."
+        npm install -g pm2
+    fi
+    
+    # Iniciar con PM2
+    echo "Iniciando con PM2..."
+    pm2 start ecosystem.config.js
+    pm2 save
+    
+    echo -e "${GREEN}✅ Servidor iniciado con PM2${NC}"
+    echo "📊 Ver logs: pm2 logs webpasarella"
+    echo "📊 Ver estado: pm2 status"
+    echo "🔄 Reiniciar: pm2 restart webpasarella"
+    echo "🛑 Detener: pm2 stop webpasarella"
+fi
+
+echo "======================="
+```
+
+## 🗑️ ¿Qué Hacer?
+
+### Mi recomendación:
+1. **Crear el script unificado** como `start.sh`
+2. **Hacer backup** de los originales:
+   ```bash
+   mkdir scripts-backup
+   cp start.sh scripts-backup/start-pm2.sh.bak
+   cp start-server.sh scripts-backup/start-nohup.sh.bak
+   ```
+3. **Reemplazar** con el script unificado
+4. **Eliminar** monitor-server.sh si ya no lo usas
+
+### Comandos finales:
+```bash
+# Backup
+mkdir -p scripts-backup
+cp start.sh scripts-backup/
+cp start-server.sh scripts-backup/
+
+# Crear nuevo start.sh unificado
+nano start.sh  # Pegar el script unificado
+
+# Hacer ejecutable
+chmod +x start.sh
+
+# Eliminar los viejos (después de probar)
+rm start-server.sh
+```
+
+---
+
+**Resumen**: Tienes dos scripts con enfoques diferentes. El mejor approach es unificarlos en uno solo que pueda funcionar en ambos modos.

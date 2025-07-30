@@ -1,0 +1,16 @@
+# Configuración básica
+Options -Indexes
+
+# Solo si el módulo está disponible
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Solo redirigir API si mod_proxy está disponible
+    <IfModule mod_proxy.c>
+        RewriteCond %{REQUEST_URI} ^/api/
+        RewriteRule ^api/(.*)$ http://localhost:3001/api/$1 [P,L]
+    </IfModule>
+</IfModule>
+
+# Manejo de errores
+ErrorDocument 404 /index.html
