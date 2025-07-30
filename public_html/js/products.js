@@ -26,7 +26,7 @@ function displayProducts(products) {
         html += `
             <div class="col-md-6 col-lg-4">
                 <div class="card product-card h-100">
-                    <img src="${product.image || 'https://via.placeholder.com/300x200'}" 
+                    <img src="/uploads/products/${product.image || 'placeholder.jpg'}" 
                          class="card-img-top product-image" 
                          alt="${product.name}"
                          onerror="this.src='https://via.placeholder.com/300x200?text=Sin+Imagen'">
