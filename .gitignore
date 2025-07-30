@@ -1,0 +1,10 @@
+-e private/backend/.env
+public_html/config.php
+node_modules/
+*.log
+private/logs/
+-e private/backend/.env
+public_html/config.php
+node_modules/
+*.log
+private/logs/
