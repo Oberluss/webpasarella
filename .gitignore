@@ -1,0 +1,38 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Configuración sensible
+private/backend/ecosystem.config.js
+private/backend/database/*.php
+private/backend/database/*.js
+config.php
+.env
+*.env
+
+# Backups
+*.backup
+*.backup.*
+backups/
+scripts-backup/
+
+# Logs
+*.log
+logs/
+private/logs/*
+!private/logs/.gitkeep
+
+# Uploads
+public_html/uploads/*
+!public_html/uploads/.gitkeep
+
+# Temporales
+*.tmp
+*.cache
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
